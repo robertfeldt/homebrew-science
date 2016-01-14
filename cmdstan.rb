@@ -21,7 +21,7 @@ class Cmdstan < Formula
     bin.install "bin/stansummary"
     bin.install "bin/stanc"
     doc.install "CONTRIBUTING.md", "LICENSE", "README.md", "examples"
-    include.install "stan_2.9.0/src/stan"
+    prefix.install "stan_2.9.0"
     (include/"stan").install Dir["stan_2.9.0/lib/stan_math_*/stan/*"]
   end
 
