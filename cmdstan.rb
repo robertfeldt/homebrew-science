@@ -26,7 +26,7 @@ class Cmdstan < Formula
     # But we need more from the bin dir...
     # This copies over all of the rest of the bin dir but also (erroneously) 
     # symlinks print and libstanc.a. Not sure how to avoid that.
-    bin.cp Dir["bin/*"]
+    bin.install Dir["bin/*"]
 
     # Install docs	
     doc.install "CONTRIBUTING.md", "LICENSE", "README.md"
