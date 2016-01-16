@@ -18,11 +18,20 @@ class Cmdstan < Formula
 
   def install
     system "make", "build"
-    bin.install "bin/stansummary"
+
+    # symlink the two commands
+    bin.install "bin/stansummary" 
     bin.install "bin/stanc"
-    doc.install "CONTRIBUTING.md", "LICENSE", "README.md", "examples"
-    prefix.install "stan_2.9.0"
-    (include/"stan").install Dir["stan_2.9.0/lib/stan_math_*/stan/*"]
+
+    # But we need more from the bin dir...
+    bin.install Dir["bin/*"] # This copies over all of the rest of the bin dir but also symlinks ;)
+	
+    doc.install "CONTRIBUTING.md", "LICENSE", "README.md"
+
+    # For the standard stan make system to work we need the following files in prefix:
+    prefix.install "src", "makefile", "make", "stan_2.9.0", "examples"
+
+	  (include/"stan").install Dir["stan_2.9.0/lib/stan_math_*/stan/*"]
   end
 
   test do
