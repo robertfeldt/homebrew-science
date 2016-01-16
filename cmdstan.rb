@@ -19,19 +19,23 @@ class Cmdstan < Formula
   def install
     system "make", "build"
 
-    # symlink the two commands
+    # symlink the two commands. These are the only ones that should be symlinked to main bin dir.
     bin.install "bin/stansummary" 
     bin.install "bin/stanc"
 
     # But we need more from the bin dir...
-    bin.install Dir["bin/*"] # This copies over all of the rest of the bin dir but also symlinks ;)
-	
+    # This copies over all of the rest of the bin dir but also (erroneously) 
+    # symlinks print and libstanc.a. Not sure how to avoid that.
+    bin.cp Dir["bin/*"]
+
+    # Install docs	
     doc.install "CONTRIBUTING.md", "LICENSE", "README.md"
 
     # For the standard stan make system to work we need the following files in prefix:
     prefix.install "src", "makefile", "make", "stan_2.9.0", "examples"
 
-	  (include/"stan").install Dir["stan_2.9.0/lib/stan_math_*/stan/*"]
+    # This cannot be done after the prefix.install of "stan_2.9.0" since the files are no longer around...
+	  # (include/"stan").install Dir["stan_2.9.0/lib/stan_math_*/stan/*"]
   end
 
   test do
