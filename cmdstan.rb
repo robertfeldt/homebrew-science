@@ -28,9 +28,40 @@ class Cmdstan < Formula
     # makefiel to work it needs the object files that the cmdstan currently saves in the bin dir.
     # This makes it hard to change the structure of these files unless other tools that depend on
     # cmdstan also change. The print file that is copied
-    bin.install "bin/libstanc.a"
-    (bin/"cmdstan").install Dir["bin/cmdstan/*"]
-    (bin/"stan").install Dir["bin/stan/*"]
+    #bin.install "bin/libstanc.a"
+    #(bin/"cmdstan").install Dir["bin/cmdstan/*"]
+    #(bin/"stan").install Dir["bin/stan/*"]
+
+    # If we change the makefile we can move the files that cmdstan normally installs to bin in lib.
+    # This was recommended by the homebrew-science maintainers as the preferred way since homebrew
+    # do not want non-executable files installed into bin.
+    lib.install "bin/libstanc.a"
+    (lib/"cmdstan").install Dir["bin/cmdstan/*"]
+    (lib/"stan").install Dir["bin/stan/*"]
+
+    # We need to change make/command file so that lines with "bin/cmdstand" instead uses
+    # "lib/cmdstan" and that the libstanc.a library has a lib instead of a bin path:
+    inreplace "make/command" do |s|
+      s.gsub! "bin/cmdstan/", "lib/cmdstan/"
+      s.gsub! "bin/libstanc.a", "lib/libstanc.a"
+    end
+
+    # We need to change make/libstan so that libstanc.a is referred to via a lib path instead of a
+    # bin path:
+    inreplace "make/libstan" do |s|
+      s.gsub! "bin/libstanc.a", "lib/libstanc.a"
+      s.gsub! "bin/stan/%.o", "lib/stan/%.o"
+      s.gsub! "src/%.cpp=bin/%.o", "src/%.cpp=lib/%.o"
+    end
+
+    # Several corresponding changes in the main makefile:
+    inreplace "makefile" do |s|
+      s.gsub! "LDLIBS_STANC = -Lbin", "LDLIBS_STANC = -Llib"
+      s.gsub! "bin/%.o", "lib/%.o"
+      s.gsub! "bin/stan/%.o :", "lib/stan/%.o :"
+      s.gsub! "bin/libstanc.a", "lib/libstanc.a"
+      s.gsub! "bin/%.d", "lib/%.d"
+    end
 
     # Install docs
     doc.install "CONTRIBUTING.md", "LICENSE", "README.md"
