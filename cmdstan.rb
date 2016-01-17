@@ -17,36 +17,21 @@ class Cmdstan < Formula
   depends_on "eigen"
 
   def install
-    system "make", "build"
+    #
+    # Before we build we need to change the make files since cmdstan builds more than binaries
+    # into the bin dir. This is not how homebrew prefers things and we were recommended
+    # by homebrew-science maintainers to change the makefiles to rather build from and to lib.
+    # We need to change in 3 make files below.
+    #
 
-    # symlink the two commands. These are the only ones that should be symlinked to main bin dir.
-    bin.install "bin/stansummary"
-    bin.install "bin/stanc"
-
-    # But unfortunately we need more from the bin dir since cmdstan uses the makefile
-    # in the prefix dir when building executables for each new stan model. In order for that
-    # makefiel to work it needs the object files that the cmdstan currently saves in the bin dir.
-    # This makes it hard to change the structure of these files unless other tools that depend on
-    # cmdstan also change. The print file that is copied
-    #bin.install "bin/libstanc.a"
-    #(bin/"cmdstan").install Dir["bin/cmdstan/*"]
-    #(bin/"stan").install Dir["bin/stan/*"]
-
-    # If we change the makefile we can move the files that cmdstan normally installs to bin in lib.
-    # This was recommended by the homebrew-science maintainers as the preferred way since homebrew
-    # do not want non-executable files installed into bin.
-    lib.install "bin/libstanc.a"
-    (lib/"cmdstan").install Dir["bin/cmdstan/*"]
-    (lib/"stan").install Dir["bin/stan/*"]
-
-    # We need to change make/command file so that lines with "bin/cmdstand" instead uses
+    # 1. We need to change make/command file so that lines with "bin/cmdstand" instead uses
     # "lib/cmdstan" and that the libstanc.a library has a lib instead of a bin path:
     inreplace "make/command" do |s|
       s.gsub! "bin/cmdstan/", "lib/cmdstan/"
       s.gsub! "bin/libstanc.a", "lib/libstanc.a"
     end
 
-    # We need to change make/libstan so that libstanc.a is referred to via a lib path instead of a
+    # 2. We need to change make/libstan so that libstanc.a is referred to via a lib path instead of a
     # bin path:
     inreplace "make/libstan" do |s|
       s.gsub! "bin/libstanc.a", "lib/libstanc.a"
@@ -54,7 +39,7 @@ class Cmdstan < Formula
       s.gsub! "src/%.cpp=bin/%.o", "src/%.cpp=lib/%.o"
     end
 
-    # Several corresponding changes in the main makefile:
+    # 3. Several corresponding changes in the main makefile:
     inreplace "makefile" do |s|
       s.gsub! "LDLIBS_STANC = -Lbin", "LDLIBS_STANC = -Llib"
       s.gsub! "bin/%.o", "lib/%.o"
@@ -63,20 +48,27 @@ class Cmdstan < Formula
       s.gsub! "bin/%.d", "lib/%.d"
     end
 
+    # Now we can build:
+    system "make", "build"
+
+    # And install and symlink the commands.
+    bin.install "bin/stansummary"
+    bin.install "bin/stanc"
+    bin.install "bin/print" # Include it for now, it will be obsolete in cmdstan 3.0 but some people might still use it
+
+    # Now install the lib dir with the built object and lib files. They are needed later when we
+    # build executables for specific Stan models.
+    lib.install Dir["lib/*"]
+
     # Install docs
     doc.install "CONTRIBUTING.md", "LICENSE", "README.md"
 
-    # For the standard stan make system to work we need the following files in prefix:
+    # For the standard stan make system to work we also need the following files in prefix:
     prefix.install "src", "makefile", "make", "stan_2.9.0", "examples"
-
-    # This cannot be done after the prefix.install of "stan_2.9.0" since the files are no longer around...
-    # (include/"stan").install Dir["stan_2.9.0/lib/stan_math_*/stan/*"]
   end
 
   test do
     system "#{bin}/stanc", "--version"
-    cp doc/"examples/bernoulli/bernoulli.stan", "."
-    system "#{bin}/stanc", "bernoulli.stan"
-    system "make", "bernoulli_model.o", "CPPFLAGS=-I#{Formula["eigen"].include/"eigen3"}"
+    system "make", "examples/bernoulli/bernoulli"
   end
 end
