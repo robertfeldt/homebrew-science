@@ -23,10 +23,14 @@ class Cmdstan < Formula
     bin.install "bin/stansummary"
     bin.install "bin/stanc"
 
-    # But we need more from the bin dir...
-    # This copies over all of the rest of the bin dir but also (erroneously)
-    # symlinks print and libstanc.a. Not sure how to avoid that.
-    bin.install Dir["bin/*"]
+    # But unfortunately we need more from the bin dir since cmdstan uses the makefile
+    # in the prefix dir when building executables for each new stan model. In order for that
+    # makefiel to work it needs the object files that the cmdstan currently saves in the bin dir.
+    # This makes it hard to change the structure of these files unless other tools that depend on
+    # cmdstan also change. The print file that is copied
+    bin.install "bin/libstanc.a"
+    (bin/"cmdstan").install Dir["bin/cmdstan/*"]
+    (bin/"stan").install Dir["bin/stan/*"]
 
     # Install docs
     doc.install "CONTRIBUTING.md", "LICENSE", "README.md"
