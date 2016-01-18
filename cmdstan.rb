@@ -70,6 +70,6 @@ class Cmdstan < Formula
     system "#{bin}/stanc", "--version"
     cp prefix/"examples/bernoulli/bernoulli.stan", "."
     system "#{bin}/stanc", "bernoulli.stan"
-    system "make", "bernoulli_model.o", "CPPFLAGS=-I#{Formula["eigen"].include/"eigen3"} -I#{prefix + "stan_2.9.0/src"} -I#{prefix + "stan_2.9.0/lib/stan_math_2.9.0"}"
+    system "make", "bernoulli_model.o", "CPPFLAGS=-I#{Formula["eigen"].include/"eigen3"} -I#{prefix}/stan_2.9.0/src -I#{prefix}/stan_2.9.0/lib/stan_math_2.9.0"
   end
 end
